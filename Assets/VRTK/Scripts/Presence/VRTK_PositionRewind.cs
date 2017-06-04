@@ -60,6 +60,32 @@ namespace VRTK
         protected bool isRewinding = false;
         protected float collideTimer = 0f;
 
+        /// <summary>
+        /// The SetLastSafePosition method updates the last known position that is safe.
+        /// </summary>
+        public virtual void SetLastSafePosition()
+        {
+            lastGoodPositionSet = true;
+            lastGoodStandingPosition = playArea.position;
+            lastGoodHeadsetPosition = headset.position;
+        }
+
+        /// <summary>
+        /// The RewindPosition method attempts to reset back to the safe position if a collision is occuring and the collider time is zero.
+        /// </summary>
+        /// <param name="ignoreCollisions">If this is true then the collision state is ignored and the position is reset regardless.</param>
+        /// <param name="ignoreTimer">If this is true then the collider time is ignored and the position is reset regardless.</param>
+        public virtual void RewindPosition(bool ignoreCollisions = false, bool ignoreTimer = false)
+        {
+            if (isColliding)
+            {
+                if (collideTimer <= 0f || ignoreTimer)
+                {
+                    ResetToSafePosition(ignoreCollisions);
+                }
+            }
+        }
+
         protected virtual void Awake()
         {
             VRTK_SDKManager.instance.AddBehaviourToToggleOnLoadedSetupChange(this);
@@ -100,8 +126,6 @@ namespace VRTK
                 }
                 else
                 {
-                    collideTimer = 0f;
-                    isColliding = false;
                     RewindPosition();
                 }
             }
@@ -123,9 +147,7 @@ namespace VRTK
             float highestYDiff = highestHeadsetY - crouchThreshold;
             if (headset.localPosition.y > highestYDiff && highestYDiff > crouchThreshold)
             {
-                lastGoodPositionSet = true;
-                lastGoodStandingPosition = playArea.position;
-                lastGoodHeadsetPosition = headset.position;
+                SetLastSafePosition();
             }
             lastPlayAreaY = playArea.position.y;
         }
@@ -164,20 +186,31 @@ namespace VRTK
             return (bodyPhysics == null || bodyPhysics.enableBodyCollisions);
         }
 
-        protected virtual bool CanRewind()
+        protected virtual bool CanRewind(bool ignoreBodyCollisions)
         {
-            return (!isRewinding && playArea != null & lastGoodPositionSet && headset.localPosition.y > crouchRewindThreshold && BodyCollisionsEnabled());
+            return (!isRewinding && playArea != null & lastGoodPositionSet && headset.localPosition.y > crouchRewindThreshold && (BodyCollisionsEnabled() || ignoreBodyCollisions));
         }
 
-        protected virtual void RewindPosition()
+        protected virtual void ResetToSafePosition(bool ignoreBodyCollisions)
         {
-            if (CanRewind())
+            collideTimer = 0f;
+            isColliding = false;
+
+            if (CanRewind(ignoreBodyCollisions))
             {
                 isRewinding = true;
-                Vector3 rewindDirection = lastGoodHeadsetPosition - headset.position;
-                float rewindDistance = Vector2.Distance(new Vector2(headset.position.x, headset.position.z), new Vector2(lastGoodHeadsetPosition.x, lastGoodHeadsetPosition.z));
-                playArea.Translate(rewindDirection.normalized * (rewindDistance + pushbackDistance));
-                playArea.position = new Vector3(playArea.position.x, lastGoodStandingPosition.y, playArea.position.z);
+                if (pushbackDistance > 0f && !ignoreBodyCollisions)
+                {
+                    Vector3 rewindDirection = lastGoodHeadsetPosition - headset.position;
+                    float rewindDistance = Vector2.Distance(new Vector2(headset.position.x, headset.position.z), new Vector2(lastGoodHeadsetPosition.x, lastGoodHeadsetPosition.z));
+                    playArea.Translate(rewindDirection.normalized * (rewindDistance + pushbackDistance));
+                    playArea.position = new Vector3(playArea.position.x, lastGoodStandingPosition.y, playArea.position.z);
+                }
+                else
+                {
+                    playArea.position = new Vector3(lastGoodHeadsetPosition.x, lastGoodStandingPosition.y, lastGoodHeadsetPosition.z);
+                }
+
                 if (bodyPhysics != null)
                 {
                     bodyPhysics.ResetVelocities();

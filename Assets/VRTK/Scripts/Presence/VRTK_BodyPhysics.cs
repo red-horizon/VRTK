@@ -233,6 +233,15 @@ namespace VRTK
         }
 
         /// <summary>
+        /// The ForceSnapToFloor method disables the prevent snap to floor and forces the snap to nearest floor action.
+        /// </summary>
+        public virtual void ForceSnapToFloor()
+        {
+            TogglePreventSnapToFloor(false);
+            SnapToNearestFloor();
+        }
+
+        /// <summary>
         /// The IsFalling method returns the falling state of the body.
         /// </summary>
         /// <returns>Returns true if the body is currently falling via gravity or via teleport.</returns>
@@ -314,6 +323,15 @@ namespace VRTK
         }
 
         /// <summary>
+        /// The GetCurrentCollidingObject method returns the object that the body physics colliders are currently colliding with.
+        /// </summary>
+        /// <returns>The GameObject that is colliding with the body physics colliders.</returns>
+        public virtual GameObject GetCurrentCollidingObject()
+        {
+            return currentCollidingObject;
+        }
+
+        /// <summary>
         /// The ResetIgnoredCollisions method is used to clear any stored ignored colliders in case the `Ignore Collisions On` array parameter is changed at runtime. This needs to be called manually if changes are made at runtime.
         /// </summary>
         public virtual void ResetIgnoredCollisions()
@@ -375,9 +393,14 @@ namespace VRTK
             lastPlayAreaPosition = (playArea != null ? playArea.position : Vector3.zero);
         }
 
+        protected virtual bool CheckValidCollision(GameObject checkObject)
+        {
+            return (!onGround || (currentValidFloorObject != null && !currentValidFloorObject.Equals(checkObject)));
+        }
+
         protected virtual void OnCollisionEnter(Collision collision)
         {
-            if (!VRTK_PlayerObject.IsPlayerObject(collision.gameObject) && currentValidFloorObject != null && !currentValidFloorObject.Equals(collision.gameObject))
+            if (!VRTK_PlayerObject.IsPlayerObject(collision.gameObject) && CheckValidCollision(collision.gameObject))
             {
                 CheckStepUpCollision(collision);
                 currentCollidingObject = collision.gameObject;
@@ -387,7 +410,7 @@ namespace VRTK
 
         protected virtual void OnTriggerEnter(Collider collider)
         {
-            if (!VRTK_PlayerObject.IsPlayerObject(collider.gameObject) && currentValidFloorObject != null && !currentValidFloorObject.Equals(collider.gameObject))
+            if (!VRTK_PlayerObject.IsPlayerObject(collider.gameObject) && CheckValidCollision(collider.gameObject))
             {
                 currentCollidingObject = collider.gameObject;
                 OnStartColliding(SetBodyPhysicsEvent(currentCollidingObject));
@@ -1069,7 +1092,7 @@ namespace VRTK
 
         protected virtual void SnapToNearestFloor()
         {
-            if (!preventSnapToFloor && (enableBodyCollisions || enableTeleport) && headset && headset.transform.position.y > playArea.position.y)
+            if (!preventSnapToFloor && (enableBodyCollisions || enableTeleport) && headset != null && headset.transform.position.y > playArea.position.y)
             {
                 Ray ray = new Ray(headset.transform.position, -playArea.up);
                 RaycastHit rayCollidedWith;
