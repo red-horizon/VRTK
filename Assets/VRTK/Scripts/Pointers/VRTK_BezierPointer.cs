@@ -1,8 +1,7 @@
-﻿// Bezier Pointer|Pointers|10040
+// Bezier Pointer|Pointers|10040
 namespace VRTK
 {
     using UnityEngine;
-    using System;
 
     /// <summary>
     /// The Bezier Pointer emits a curved line (made out of game objects) from the end of the attached object to a point on a ground surface (at any height).
@@ -19,7 +18,6 @@ namespace VRTK
     ///
     /// `VRTK/Examples/036_Controller_CustomCompoundPointer' shows how to display an object (a teleport beam) only if the teleport location is valid, and can create an animated trail along the tracer curve.
     /// </example>
-    [Obsolete("`VRTK_BezierPointer` has been replaced with `VRTK_BezierPointerRenderer` attached to a `VRTK_Pointer`. This script will be removed in a future version of VRTK.")]
     public class VRTK_BezierPointer : VRTK_BasePointer
     {
         [Header("Bezier Pointer Settings", order = 3)]
@@ -53,14 +51,14 @@ namespace VRTK
         [Tooltip("A custom Game Object can be applied here to appear only if the teleport is allowed (its material will not be changed ).")]
         public GameObject validTeleportLocationObject = null;
 
-        private GameObject pointerCursor;
-        private GameObject curvedBeamContainer;
-        private VRTK_CurveGenerator curvedBeam;
-        private GameObject validTeleportLocationInstance = null;
-        private bool beamActive = false;
-        private Vector3 fixedForwardBeamForward;
-        private Vector3 contactNormal;
-        private const float BEAM_ADJUST_OFFSET = 0.00001f;
+        protected GameObject pointerCursor;
+        protected GameObject curvedBeamContainer;
+        protected VRTK_CurveGenerator curvedBeam;
+        protected GameObject validTeleportLocationInstance = null;
+        protected bool beamActive = false;
+        protected Vector3 fixedForwardBeamForward;
+        protected Vector3 contactNormal;
+        protected const float BEAM_ADJUST_OFFSET = 0.00001f;
 
         protected override void OnEnable()
         {
@@ -178,12 +176,11 @@ namespace VRTK
             base.TogglePointer(state);
         }
 
-        private Vector3 ProjectForwardBeam()
+        protected virtual Vector3 ProjectForwardBeam()
         {
-            var origin = GetOrigin();
-            var attachedRotation = Vector3.Dot(Vector3.up, origin.forward.normalized);
+            var attachedRotation = Vector3.Dot(Vector3.up, transform.forward.normalized);
             var calculatedLength = pointerLength;
-            var useForward = origin.forward;
+            var useForward = GetOriginForward();
             if ((attachedRotation * 100f) > beamHeightLimitAngle)
             {
                 useForward = new Vector3(useForward.x, fixedForwardBeamForward.y, useForward.z);
@@ -192,11 +189,11 @@ namespace VRTK
             }
             else
             {
-                fixedForwardBeamForward = origin.forward;
+                fixedForwardBeamForward = GetOriginForward();
             }
 
             var actualLength = calculatedLength;
-            Ray pointerRaycast = new Ray(origin.position, useForward);
+            Ray pointerRaycast = new Ray(GetOriginPosition(), useForward);
 
             RaycastHit collidedWith;
             var hasRayHit = Physics.Raycast(pointerRaycast, out collidedWith, calculatedLength, ~layersToIgnore);
@@ -219,11 +216,12 @@ namespace VRTK
                 actualLength = pointerContactDistance;
             }
 
+
             //Use BEAM_ADJUST_OFFSET to move point back and up a bit to prevent beam clipping at collision point
             return (pointerRaycast.GetPoint(actualLength - BEAM_ADJUST_OFFSET) + (Vector3.up * BEAM_ADJUST_OFFSET));
         }
 
-        private Vector3 ProjectDownBeam(Vector3 jointPosition)
+        protected Vector3 ProjectDownBeam(Vector3 jointPosition)
         {
             Vector3 downPosition = Vector3.zero;
             Ray projectedBeamDownRaycast = new Ray(jointPosition, Vector3.down);
@@ -251,10 +249,11 @@ namespace VRTK
                 downPosition = projectedBeamDownRaycast.GetPoint(collidedWith.distance);
                 base.PointerIn();
             }
+
             return downPosition;
         }
 
-        private void SetPointerCursor(Vector3 cursorPosition)
+        protected void SetPointerCursor(Vector3 cursorPosition)
         {
             destinationPosition = cursorPosition;
 
@@ -268,6 +267,7 @@ namespace VRTK
                 }
                 base.UpdateDependencies(pointerCursor.transform.position);
                 UpdatePointerMaterial(pointerHitColor);
+                Debug.Log("Pointer Hit!");
                 if (validTeleportLocationInstance != null)
                 {
                     validTeleportLocationInstance.SetActive(ValidDestination(pointerContactTarget, destinationPosition));
@@ -277,10 +277,11 @@ namespace VRTK
             {
                 TogglePointerCursor(false);
                 UpdatePointerMaterial(pointerMissColor);
+                Debug.Log("Pointer Missed!");
             }
         }
 
-        private void AdjustForEarlyCollisions(Vector3 jointPosition, Vector3 downPosition)
+        protected void AdjustForEarlyCollisions(Vector3 jointPosition, Vector3 downPosition)
         {
             Vector3 newDownPosition = downPosition;
             Vector3 newJointPosition = jointPosition;
@@ -288,13 +289,12 @@ namespace VRTK
             if (collisionCheckFrequency > 0)
             {
                 collisionCheckFrequency = Mathf.Clamp(collisionCheckFrequency, 0, pointerDensity);
-                Vector3[] beamPoints = new Vector3[]
-{
-                GetOrigin().position,
-                jointPosition + new Vector3(0f, beamCurveOffset, 0f),
-                downPosition,
-                downPosition,
-};
+                Vector3[] beamPoints = new Vector3[]{
+                    GetOriginPosition(),
+                    jointPosition + new Vector3(0f, beamCurveOffset, 0f),
+                    downPosition,
+                    downPosition,
+                };
 
                 Vector3[] checkPoints = curvedBeam.GetPoints(beamPoints);
                 int checkFrequency = pointerDensity / collisionCheckFrequency;
@@ -329,11 +329,11 @@ namespace VRTK
             SetPointerCursor(newDownPosition);
         }
 
-        private void DisplayCurvedBeam(Vector3 jointPosition, Vector3 downPosition)
+        protected void DisplayCurvedBeam(Vector3 jointPosition, Vector3 downPosition)
         {
             Vector3[] beamPoints = new Vector3[]
             {
-                GetOrigin(false).position,
+                GetOriginPosition(),
                 jointPosition + new Vector3(0f, beamCurveOffset, 0f),
                 downPosition,
                 downPosition,
@@ -344,6 +344,11 @@ namespace VRTK
             {
                 curvedBeam.TogglePoints(true);
             }
+        }
+
+        protected void BaseUpdate()
+        {
+            base.Update();
         }
     }
 }
