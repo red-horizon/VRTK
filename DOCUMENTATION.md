@@ -356,6 +356,7 @@ If the `Use Joint` Snap Type is selected then a custom Joint component is requir
  * **Snap Type:** The Snap Type to apply when a valid interactable object is dropped within the snap zone.
  * **Snap Duration:** The amount of time it takes for the object being snapped to move into the new snapped position, rotation and scale.
  * **Apply Scaling On Snap:** If this is checked then the scaled size of the snap drop zone will be applied to the object that is snapped to it.
+ * **Clone New On Unsnap:** If this is checked then when the snapped object is unsnapped from the drop zone, a clone of the unsnapped object will be snapped back into the drop zone.
  * **Highlight Color:** The colour to use when showing the snap zone is active.
  * **Highlight Always Active:** The highlight object will always be displayed when the snap drop zone is available even if a valid item isn't being hovered over.
  * **Valid Object List Policy:** A specified VRTK_PolicyList to use to determine which interactable objects will be snapped to the snap drop zone on release.
@@ -695,6 +696,7 @@ The destination points can also have a locked state if the `Enable Teleport` fla
  * **Destination Location:** An optional transform to determine the destination location for the destination marker. This can be useful to offset the destination location from the destination point. If this is left empty then the destiantion point transform will be used.
  * **Snap To Point:** If this is checked then after teleporting, the play area will be snapped to the origin of the destination point. If this is false then it's possible to teleport to anywhere within the destination point collider.
  * **Hide Pointer Cursor On Hover:** If this is checked, then the pointer cursor will be hidden when a valid destination point is hovered over.
+ * **Hide Direction Indicator On Hover:** If this is checked, then the pointer direction indicator will be hidden when a valid destination point is hovered over. A pointer direction indicator will always be hidden if snap to rotation is set.
  * **Snap To Rotation:** Determines if the play area will be rotated to the rotation of the destination point upon the destination marker being set.
 
 ### Class Variables
@@ -743,13 +745,15 @@ The ResetDestinationPoint resets the destination point back to the default state
 
 The Pointer Direction Indicator is used to determine a given world rotation that can be used by a Destiantion Marker.
 
-The Pointer Direction Indicator can be attached to a VRTK_Pointer in the `Direction Indicator` parameter and will the be used to send rotation data when the destination marker events are emitted.
+The Pointer Direction Indicator can be attached to a VRTK_BasePointerRenderer in the `Direction Indicator` parameter and will the be used to send rotation data when the destination marker events are emitted.
 
 This can be useful for rotating the play area upon teleporting to face the user in a new direction without expecting them to physically turn in the play space.
 
 ### Inspector Parameters
 
  * **Include Headset Offset:** If this is checked then the reported rotation will include the offset of the headset rotation in relation to the play area.
+ * **Display On Invalid Location:** If this is checked then the direction indicator will be displayed when the location is invalid.
+ * **Use Pointer Color:** If this is checked then the pointer valid/invalid colours will also be used to change the colour of the direction indicator.
 
 ### Class Events
 
@@ -796,6 +800,18 @@ The SetPosition method is used to set the world position of the direction indica
    * `Quaternion` - The reported rotation of the direction indicator.
 
 The GetRotation method returns the current reported rotation of the direction indicator.
+
+#### SetMaterialColor/2
+
+  > `public virtual void SetMaterialColor(Color color, bool validity)`
+
+  * Parameters
+   * `Color color` - The colour to update the direction indicatormaterial to.
+   * `bool validity` - Determines if the colour being set is based from a valid location or invalid location.
+  * Returns
+   * _none_
+
+The SetMaterialColor method sets the current material colour on the direction indicator.
 
 ---
 
@@ -1056,6 +1072,7 @@ It is utilised by the `VRTK_BasePointer` for dealing with pointer events when th
 ### Inspector Parameters
 
  * **Enable Teleport:** If this is checked then the teleport flag is set to true in the Destination Set event so teleport scripts will know whether to action the new destination.
+ * **Target List Policy:** A specified VRTK_PolicyList to use to determine whether destination targets will be considered valid or invalid.
 
 ### Class Events
 
@@ -1081,17 +1098,6 @@ Adding the `VRTK_DestinationMarker_UnityEvents` component to `VRTK_DestinationMa
  * `VRTK_ControllerReference controllerReference` - The optional reference to the controller controlling the destination marker.
 
 ### Class Methods
-
-#### SetInvalidTarget/1
-
-  > `public virtual void SetInvalidTarget(VRTK_PolicyList list = null)`
-
-  * Parameters
-   * `VRTK_PolicyList list` - The Tag Or Script list policy to check the set operation on.
-  * Returns
-   * _none_
-
-The SetInvalidTarget method is used to set objects that contain the given tag or class matching the name as invalid destination targets. It accepts a VRTK_PolicyList for a custom level of policy management.
 
 #### SetNavMeshCheckDistance/1
 
@@ -1161,7 +1167,6 @@ It extends the `VRTK_DestinationMarker` to allow for destination events to be em
  * **Controller:** An optional controller that will be used to toggle the pointer. If the script is being applied onto a controller then this parameter can be left blank as it will be auto populated by the controller the script is on at runtime.
  * **Interact Use:** An optional InteractUse script that will be used when using interactable objects with pointer. If this is left blank then it will attempt to get the InteractUse script from the same GameObject and if it cannot find one then it will attempt to get it from the attached controller.
  * **Custom Origin:** A custom transform to use as the origin of the pointer. If no pointer origin transform is provided then the transform the script is attached to is used.
- * **Direction Indicator:** A custom VRTK_PointerDirectionIndicator to use to determine the rotation given to the destination set event.
 
 ### Class Events
 
@@ -1169,6 +1174,8 @@ It extends the `VRTK_DestinationMarker` to allow for destination events to be em
  * `ActivationButtonReleased` - Emitted when the pointer activation button is released.
  * `SelectionButtonPressed` - Emitted when the pointer selection button is pressed.
  * `SelectionButtonReleased` - Emitted when the pointer selection button is released.
+ * `PointerStateValid` - Emitted when the pointer is in a valid state.
+ * `PointerStateInvalid` - Emitted when the pointer is in an invalid state.
 
 ### Unity Events
 
@@ -1288,6 +1295,17 @@ The ResetSelectionTimer method is used to reset the pointer selection timer to t
 
 The Toggle method is used to enable or disable the pointer.
 
+#### IsStateValid/0
+
+  > `public virtual bool IsStateValid()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `bool` - Returns true if the pointer is in the valid state (showing the valid colour), returns false if the pointer is in the invalid state (showing the invalid colour).
+
+The IsStateValid method is used to determine if the pointer is currently in a valid state (i.e. on it's valid colour).
+
 ---
 
 ## Play Area Cursor (VRTK_PlayAreaCursor)
@@ -1298,12 +1316,12 @@ The Play Area Cursor is used in conjunction with a Pointer script and displays a
 
 ### Inspector Parameters
 
+ * **Use Pointer Color:** If this is checked then the pointer valid/invalid colours will also be used to change the colour of the play area cursor when colliding/not colliding.
  * **Play Area Cursor Dimensions:** Determines the size of the play area cursor and collider. If the values are left as zero then the Play Area Cursor will be sized to the calibrated Play Area space.
  * **Handle Play Area Cursor Collisions:** If this is checked then if the play area cursor is colliding with any other object then the pointer colour will change to the `Pointer Miss Color` and the `DestinationMarkerSet` event will not be triggered, which will prevent teleporting into areas where the play area will collide.
  * **Headset Out Of Bounds Is Collision:** If this is checked then if the user's headset is outside of the play area cursor bounds then it is considered a collision even if the play area isn't colliding with anything.
  * **Display On Invalid Location:** If this is checked then the play area cursor will be displayed when the location is invalid.
  * **Target List Policy:** A specified VRTK_PolicyList to use to determine whether the play area cursor collisions will be acted upon.
- * **Use Pointer Color:** If this is checked then the pointer hit/miss colours will also be used to change the colour of the play area cursor when colliding/not colliding.
  * **Valid Location Object:** A custom GameObject to use for the play area cursor representation for when the location is valid.
  * **Invalid Location Object:** A custom GameObject to use for the play area cursor representation for when the location is invalid.
 
@@ -1454,6 +1472,7 @@ Specifies the smoothing to be applied to the pointer.
  * **Smooths Rotation:** Whether or not to smooth the rotation of the pointer origin when positioning the pointer tip.
  * **Max Allowed Per Frame Angle Difference:** The maximum allowed angle between the unsmoothed pointer origin and the smoothed pointer origin per frame to use for smoothing.
  * **Playarea Cursor:** An optional Play Area Cursor generator to add to the destination position of the pointer tip.
+ * **Direction Indicator:** A custom VRTK_PointerDirectionIndicator to use to determine the rotation given to the destination set event.
  * **Custom Raycast:** A custom raycaster to use for the pointer's raycasts to ignore.
  * **Pointer Origin Smoothing Settings:** Specifies the smoothing to be applied to the pointer origin when positioning the pointer tip.
  * **Valid Collision Color:** The colour to change the pointer materials when the pointer collides with a valid object. Set to `Color.clear` to bypass changing material colour on valid collision.
@@ -1822,20 +1841,20 @@ The ToggleTeleportEnabled method is used to determine whether the teleporter wil
 
 The ValidLocation method determines if the given target is a location that can be teleported to
 
-#### ForceTeleport/1
+#### Teleport/1
 
-  > `public virtual void ForceTeleport(DestinationMarkerEventArgs teleportArgs)`
+  > `public virtual void Teleport(DestinationMarkerEventArgs teleportArgs)`
 
   * Parameters
    * `DestinationMarkerEventArgs teleportArgs` - The pseudo Destination Marker event for the teleport action.
   * Returns
    * _none_
 
-The ForceTeleport/1 method forces the teleport to update position without needing to listen for a Destination Marker event.
+The Teleport/1 method calls the teleport to update position without needing to listen for a Destination Marker event.
 
-#### ForceTeleport/4
+#### Teleport/4
 
-  > `public virtual void ForceTeleport(Transform target, Vector3 destinationPosition, Quaternion? destinationRotation = null, bool forceDestinationPosition = false)`
+  > `public virtual void Teleport(Transform target, Vector3 destinationPosition, Quaternion? destinationRotation = null, bool forceDestinationPosition = false)`
 
   * Parameters
    * `Transform target` - The Transform of the destination object.
@@ -1845,7 +1864,19 @@ The ForceTeleport/1 method forces the teleport to update position without needin
   * Returns
    * _none_
 
-The ForceTeleport/3 method forces the teleport to update position without needing to listen for a Destination Marker event. It will build a destination marker out of the provided parameters.
+The Teleport/4 method calls the teleport to update position without needing to listen for a Destination Marker event. It will build a destination marker out of the provided parameters.
+
+#### ForceTeleport/2
+
+  > `public virtual void ForceTeleport(Vector3 destinationPosition, Quaternion? destinationRotation = null)`
+
+  * Parameters
+   * `Vector3 destinationPosition` - The world position to teleport to.
+   * `Quaternion? destinationRotation` - The world rotation to teleport to.
+  * Returns
+   * _none_
+
+The ForceTeleport method forces the position to update to a given destination and ignores any target checking or floor adjustment.
 
 ### Example
 
@@ -6124,6 +6155,7 @@ A collection of scripts that provide useful functionality to aid the creation pr
  * [Rigidbody Follow](#rigidbody-follow-vrtk_rigidbodyfollow)
  * [Transform Follow](#transform-follow-vrtk_transformfollow)
  * [SDK Object Alias](#sdk-object-alias-vrtk_sdkobjectalias)
+ * [SDK Transform Modify](#sdk-transform-modify-vrtk_sdktransformmodify)
  * [Simulating Headset Movement](#simulating-headset-movement-vrtk_simulator)
 
 ---
@@ -6138,7 +6170,6 @@ and the method info of the method the attribute is defined on.
 
 ### Inspector Parameters
 
- * **Persist On Load:** If this is true then the instance of the SDK Manager won't be destroyed on every scene load.
  * **Auto Manage Script Defines:** Determines whether the scripting define symbols required by the installed SDKs are automatically added to and removed from the player settings.
  * **Script Alias Left Controller:** A reference to the GameObject that contains any scripts that apply to the Left Hand Controller.
  * **Script Alias Right Controller:** A reference to the GameObject that contains any scripts that apply to the Right Hand Controller.
@@ -6162,7 +6193,7 @@ and the method info of the method the attribute is defined on.
  * `public static ReadOnlyCollection<VRTK_SDKInfo> InstalledControllerSDKInfos { get private set }` - All installed controller SDK infos. This is a subset of  . It contains only those available SDK infos for which an  exists that uses the same symbol and whose associated method returns true.
  * `public static VRTK_SDKManager instance` - The singleton instance to access the SDK Manager variables from.
  * `public List<SDK_ScriptingDefineSymbolPredicateAttribute> activeScriptingDefineSymbolsWithoutSDKClasses` - The active (i.e. to be added to the  ) scripting define symbol predicate attributes that have no associated SDK classes. Default: `new List<SDK_ScriptingDefineSymbolPredicateAttribute>()`
- * `public VRTK_SDKSetup loadedSetup { get private set }` - The loaded SDK Setup.  if no setup is currently loaded.
+ * `public VRTK_SDKSetup loadedSetup` - The loaded SDK Setup.  if no setup is currently loaded.
  * `public ReadOnlyCollection<Behaviour> behavioursToToggleOnLoadedSetupChange { get private set }` - All behaviours that need toggling whenever  changes.
 
 ### Class Events
@@ -6240,6 +6271,17 @@ Adds a behaviour to the list of behaviours to toggle when  changes.
 
 Removes a behaviour of the list of behaviours to toggle when  changes.
 
+#### TryLoadSDKSetupFromList/1
+
+  > `public void TryLoadSDKSetupFromList(bool tryUseLastLoadedSetup = true)`
+
+  * Parameters
+   * _none_
+  * Returns
+   * _none_
+
+Tries to load a valid  from  .
+
 #### TryLoadSDKSetup/3
 
   > `public void TryLoadSDKSetup(int startIndex, bool tryToReinitialize, params VRTK_SDKSetup[] sdkSetups)`
@@ -6266,7 +6308,7 @@ Sets a given  as the loaded SDK Setup to be able to use it when populating objec
 
 #### UnloadSDKSetup/1
 
-  > `public void UnloadSDKSetup(bool disableVR = true)`
+  > `public void UnloadSDKSetup(bool disableVR = false)`
 
   * Parameters
    * `bool disableVR` - Whether to disable VR altogether after unloading the SDK Setup.
@@ -6425,6 +6467,17 @@ The Device Finder offers a collection of static methods that can be called to fi
   * `ViveMV` - A specific version of the HTC Vive headset, the first consumer version.
 
 ### Class Methods
+
+#### GetCurrentControllerType/0
+
+  > `public static SDK_BaseController.ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `SDK_BaseController.ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
 
 #### GetControllerIndex/1
 
@@ -6658,6 +6711,17 @@ The HeadsetTransform method is used to retrieve the transform for the VR Headset
    * `Transform` - The transform of the VR Camera component.
 
 The HeadsetCamera method is used to retrieve the transform for the VR Camera in the scene.
+
+#### ResetHeadsetTypeCache/0
+
+  > `public static void ResetHeadsetTypeCache()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * _none_
+
+The ResetHeadsetTypeCache resets the cache holding the current headset type value.
 
 #### GetHeadsetType/1
 
@@ -6897,6 +6961,17 @@ The NumberPercent method is used to determine the percentage of a given value.
    * _none_
 
 The SetGlobalScale method is used to set a transform scale based on a global scale instead of a local scale.
+
+#### GetTypeUnknownAssembly/1
+
+  > `public static Type GetTypeUnknownAssembly(string typeName)`
+
+  * Parameters
+   * `string typeName` - The name of the type to get.
+  * Returns
+   * `Type` - The Type, or null if none is found.
+
+The GetTypeUnknownAssembly method is used to find a Type without knowing the exact assembly it is in.
 
 ---
 
@@ -7273,6 +7348,24 @@ The GameObject that the SDK Object Alias script is applied to will become a chil
  * `public enum SDKObject` - Valid SDK Objects
   * `Boundary` - The main camera rig/play area object that defines the player boundary.
   * `Headset` - The main headset camera defines the player head.
+
+---
+
+## SDK Transform Modify (VRTK_SDKTransformModify)
+
+### Overview
+
+The SDK Transform Modify can be used to change a transform orientation at runtime based on the currently used SDK or SDK controller.
+
+### Inspector Parameters
+
+ * **Loaded SDK Setup:** An optional SDK Setup to use to determine when to modify the transform.
+ * **Controller Type:** An optional SDK controller type to use to determine when to modify the transform.
+ * **Position:** The new local position to change the transform to.
+ * **Rotation:** The new local rotation in eular angles to change the transform to.
+ * **Scale:** The new local scale to change the transform to.
+ * **Target:** The target transform to modify on enable. If this is left blank then the transform the script is attached to will be used.
+ * **Sdk Overrides:** A collection of SDK Transform overrides to change the given target transform for each specified SDK.
 
 ---
 
@@ -7663,6 +7756,15 @@ This is an abstract class to implement the interface required by all implemented
   * `None` - No hand is assigned.
   * `Left` - The left hand is assigned.
   * `Right` - The right hand is assigned.
+ * `public enum ControllerType` - SDK Controller types.
+  * `Undefined` - No controller type.
+  * `Custom` - A custom controller type.
+  * `Simulator_Hand` - The Simulator default hand controller.
+  * `SteamVR_ViveWand` - The HTC Vive wand controller for SteamVR.
+  * `SteamVR_OculusTouch` - The Oculus Touch controller for SteamVR.
+  * `Oculus_OculusTouch` - The Oculus Touch controller for Oculus Utilities.
+  * `Daydream_Controller` - The Daydream controller for Google Daydream SDK.
+  * `Ximmerse_Flip` - The Flip controller for Ximmerse SDK.
 
 ### Class Methods
 
@@ -7689,6 +7791,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
    * _none_
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
+
+#### GetCurrentControllerType/0
+
+  > `public abstract ControllerType GetCurrentControllerType();`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
 
 #### GetControllerDefaultColliderPath/1
 
@@ -8288,6 +8401,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
 
+#### GetCurrentControllerType/0
+
+  > `public override ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
+
 #### GetControllerDefaultColliderPath/1
 
   > `public override string GetControllerDefaultColliderPath(ControllerHand hand)`
@@ -8868,6 +8992,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
    * _none_
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
+
+#### GetCurrentControllerType/0
+
+  > `public override ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
 
 #### GetControllerDefaultColliderPath/1
 
@@ -9469,6 +9604,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
 
+#### GetCurrentControllerType/0
+
+  > `public override ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
+
 #### GetControllerDefaultColliderPath/1
 
   > `public override string GetControllerDefaultColliderPath(ControllerHand hand)`
@@ -10069,6 +10215,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
 
+#### GetCurrentControllerType/0
+
+  > `public override ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
+
 #### GetControllerDefaultColliderPath/1
 
   > `public override string GetControllerDefaultColliderPath(ControllerHand hand)`
@@ -10668,6 +10825,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
 
+#### GetCurrentControllerType/0
+
+  > `public override ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
+
 #### GetControllerDefaultColliderPath/1
 
   > `public override string GetControllerDefaultColliderPath(ControllerHand hand)`
@@ -11255,6 +11423,17 @@ The ProcessUpdate method enables an SDK to run logic for every Unity Update
    * _none_
 
 The ProcessFixedUpdate method enables an SDK to run logic for every Unity FixedUpdate
+
+#### GetCurrentControllerType/0
+
+  > `public override ControllerType GetCurrentControllerType()`
+
+  * Parameters
+   * _none_
+  * Returns
+   * `ControllerType` - The ControllerType based on the SDK and headset being used.
+
+The GetCurrentControllerType method returns the current used ControllerType based on the SDK and headset being used.
 
 #### GetControllerDefaultColliderPath/1
 
