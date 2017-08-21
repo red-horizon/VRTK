@@ -52,6 +52,7 @@ A collection of titles that have been made with VRTK.
 | Uphill Skiing | [Steam Store Page](http://store.steampowered.com/app/646380) |
 | CloudCity VR | [Steam Store Page](http://store.steampowered.com/app/662950) |
 | Unknown Fate | [Steam Store Page](http://store.steampowered.com/app/510390) |
+| Disco Destruction | [Steam Store Page](http://store.steampowered.com/app/677380) |
 
 ## Oculus Home
 
@@ -59,6 +60,7 @@ A collection of titles that have been made with VRTK.
 |-------------------------------------------------|-------------------------------------------------------------------------------------------|
 | Dungeon Chess | [Oculus Home Store Page](https://www.oculus.com/experiences/rift/1201154329997563) |
 | Power Solitaire VR | [Oculus Home Store Page](https://www.oculus.com/experiences/rift/1119889274794166) |
+| Magic Table Chess | [Oculus Home Store Page](https://www.oculus.com/experiences/rift/804448142992694) |
 
 ## Itch.io
 

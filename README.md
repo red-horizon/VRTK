@@ -8,8 +8,6 @@
 [![YouTube](https://img.shields.io/badge/youtube-channel-e52d27.svg)](http://videos.vrtk.io)
 [![Waffle](https://img.shields.io/badge/project-backlog-78bdf2.svg)](http://tracker.vrtk.io)
 
-[![patreon_logo](https://cloud.githubusercontent.com/assets/1029673/23074410/8c248822-f530-11e6-9156-aeef1262be86.png)](https://www.patreon.com/vrtk)
-
 | Supported SDK | Download Link |
 |---------------|---------------|
 | VR Simulator | Included |
@@ -26,11 +24,14 @@ A big thank you to all those who support VRTK via [Patreon].
 
 A list of supports can be seen in [THANK_YOU_CREDITS.md].
 
-### Professional Sponsors
+[![patreon_logo](https://user-images.githubusercontent.com/1029673/28471651-be40a2ea-6e35-11e7-9b01-e1b4a7d533b3.png)](https://www.patreon.com/vrtk)
 
-An extra special thank you to our professional sponsors via [Patreon].
 
-[![image](https://user-images.githubusercontent.com/1029673/27898738-28f0e226-621f-11e7-9fdb-8618d85ba372.png)](https://www.realestate.com.au) 
+### Sponsors
+
+An extra special thank you to our sponsors via [Patreon].
+
+[![image](https://user-images.githubusercontent.com/1029673/27898738-28f0e226-621f-11e7-9fdb-8618d85ba372.png)](https://www.realestate.com.au) [![image](https://user-images.githubusercontent.com/1029673/29113652-8fa11ca4-7ce9-11e7-9e33-88308af369b9.png)](http://alvios.com/)
 
 ## Documentation
 

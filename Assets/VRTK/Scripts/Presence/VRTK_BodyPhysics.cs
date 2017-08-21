@@ -404,8 +404,8 @@ namespace VRTK
         /// <returns>Returns true if a collision will occur on the given direction over the given maxium distance. Returns false if there is no collision about to happen.</returns>
         public virtual bool SweepCollision(Vector3 direction, float maxDistance)
         {
-            Vector3 point1 = (bodyCollider.transform.position + bodyCollider.center) + (Vector3.up * ((bodyCollider.height * 0.5f) - bodyCollider.radius));
-            Vector3 point2 = (bodyCollider.transform.position + bodyCollider.center) - (Vector3.up * ((bodyCollider.height * 0.5f) - bodyCollider.radius));
+            Vector3 point1 = bodyCollider.transform.parent.TransformPoint(bodyCollider.transform.localPosition + (bodyCollider.center)) + (Vector3.up * ((bodyCollider.height * 0.5f) - bodyCollider.radius));
+            Vector3 point2 = bodyCollider.transform.parent.TransformPoint(bodyCollider.transform.localPosition + (bodyCollider.center)) - (Vector3.up * ((bodyCollider.height * 0.5f) - bodyCollider.radius));
             RaycastHit collisionHit;
 #pragma warning disable 0618
             return VRTK_CustomRaycast.CapsuleCast(customRaycast, point1, point2, bodyCollider.radius, direction, maxDistance, out collisionHit, layersToIgnore, QueryTriggerInteraction.Ignore);
@@ -504,12 +504,12 @@ namespace VRTK
 
         protected virtual bool CheckValidCollision(GameObject checkObject)
         {
-            return (!VRTK_PlayerObject.IsPlayerObject(checkObject) && (!onGround || (currentValidFloorObject != null && !currentValidFloorObject.Equals(checkObject))));
+            return (!VRTK_PlayerObject.IsPlayerObject(checkObject) && (!onGround || (currentValidFloorObject != null && currentValidFloorObject != checkObject)));
         }
 
         protected virtual bool CheckExistingCollision(GameObject checkObject)
         {
-            return (currentCollidingObject != null && currentCollidingObject.Equals(checkObject));
+            return (currentCollidingObject != null && currentCollidingObject == checkObject);
         }
 
         protected virtual void SetupPlayArea()
@@ -719,7 +719,7 @@ namespace VRTK
 
         protected virtual void SetCurrentStandingPosition()
         {
-            if (playArea != null && !playArea.transform.position.Equals(lastPlayAreaPosition))
+            if (playArea != null && playArea.transform.position != lastPlayAreaPosition)
             {
                 Vector3 playareaDifference = playArea.transform.position - lastPlayAreaPosition;
                 currentStandingPosition = new Vector2(currentStandingPosition.x + playareaDifference.x, currentStandingPosition.y + playareaDifference.z);
