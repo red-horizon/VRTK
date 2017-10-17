@@ -262,6 +262,7 @@ namespace VRTK
                 {
                     savedGrabButton = subscribedGrabButton;
                     grabButton = touchedObjectScript.grabOverrideButton;
+                    ManageGrabListener(true);
                 }
             }
         }
@@ -275,6 +276,7 @@ namespace VRTK
                 {
                     grabButton = savedGrabButton;
                     savedGrabButton = VRTK_ControllerEvents.ButtonAlias.Undefined;
+                    ManageGrabListener(true);
                 }
             }
         }
@@ -446,14 +448,6 @@ namespace VRTK
 
         protected virtual void InitSecondaryGrab(VRTK_InteractableObject currentGrabbedObject)
         {
-            if (!currentGrabbedObject.IsValidInteractableController(gameObject, currentGrabbedObject.allowedGrabControllers))
-            {
-                grabbedObject = null;
-                influencingGrabbedObject = false;
-                currentGrabbedObject.Ungrabbed(this);
-                return;
-            }
-
             influencingGrabbedObject = true;
             currentGrabbedObject.Grabbed(this);
         }
