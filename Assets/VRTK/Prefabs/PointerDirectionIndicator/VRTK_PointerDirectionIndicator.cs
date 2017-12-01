@@ -37,8 +37,11 @@ namespace VRTK
         }
 
         [Header("Control Settings")]
+
         [Tooltip("The touchpad axis needs to be above this deadzone for it to register as a valid touchpad angle.")]
         public Vector2 touchpadDeadzone = Vector2.zero;
+        [Tooltip("The axis to use for the direction coordinates.")]
+        public VRTK_ControllerEvents.Vector2AxisAlias coordinateAxis = VRTK_ControllerEvents.Vector2AxisAlias.Touchpad;
 
         [Header("Appearance Settings")]
 
@@ -126,6 +129,15 @@ namespace VRTK
             }
         }
 
+        /// <summary>
+        /// The GetControllerEvents method returns the associated Controller Events script with the Pointer Direction Indicator script.
+        /// </summary>
+        /// <returns>The associated Controller Events script.</returns>
+        public virtual VRTK_ControllerEvents GetControllerEvents()
+        {
+            return controllerEvents;
+        }
+
         protected virtual void Awake()
         {
             validLocation = transform.Find("ValidLocation").gameObject;
@@ -135,9 +147,9 @@ namespace VRTK
 
         protected virtual void Update()
         {
-            if (controllerEvents != null && controllerEvents.touchpadTouched && !InsideDeadzone(controllerEvents.GetTouchpadAxis()))
+            if (controllerEvents != null && controllerEvents.GetAxisState(coordinateAxis, SDK_BaseController.ButtonPressTypes.Touch) && !InsideDeadzone(controllerEvents.GetAxis(coordinateAxis)))
             {
-                float touchpadAngle = controllerEvents.GetTouchpadAxisAngle();
+                float touchpadAngle = controllerEvents.GetAxisAngle(coordinateAxis);
                 float angle = ((touchpadAngle > 180) ? touchpadAngle -= 360 : touchpadAngle) + headset.eulerAngles.y;
                 transform.localEulerAngles = new Vector3(0f, angle, 0f);
             }

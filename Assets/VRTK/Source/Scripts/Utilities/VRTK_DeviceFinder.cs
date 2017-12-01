@@ -35,6 +35,7 @@ namespace VRTK
         /// <summary>
         /// Possible headsets
         /// </summary>
+        [System.Obsolete("`VRTK_DeviceFinder.Headsets` has been deprecated and has been replaced with a manufacturer string. This enum will be removed in a future version of VRTK.")]
         public enum Headsets
         {
             /// <summary>
@@ -67,6 +68,9 @@ namespace VRTK
             OculusRiftES07
         }
 
+        /// <summary>
+        /// Obsolete
+        /// </summary>
         private static string cachedHeadsetType = "";
 
         /// <summary>
@@ -255,6 +259,23 @@ namespace VRTK
         }
 
         /// <summary>
+        /// The GetOppositeHand method returns the other hand type from the current hand given.
+        /// </summary>
+        /// <param name="currentHand">The current hand.</param>
+        /// <returns>The opposite hand.</returns>
+        public static SDK_BaseController.ControllerHand GetOppositeHand(SDK_BaseController.ControllerHand currentHand)
+        {
+            switch (currentHand)
+            {
+                case SDK_BaseController.ControllerHand.Left:
+                    return SDK_BaseController.ControllerHand.Right;
+                case SDK_BaseController.ControllerHand.Right:
+                    return SDK_BaseController.ControllerHand.Left;
+            }
+            return currentHand;
+        }
+
+        /// <summary>
         /// The GetActualController method will attempt to get the actual SDK controller object.
         /// </summary>
         /// <param name="givenController">The GameObject of the controller.</param>
@@ -391,6 +412,7 @@ namespace VRTK
         /// <summary>
         /// The ResetHeadsetTypeCache resets the cache holding the current headset type value.
         /// </summary>
+        [System.Obsolete("`VRTK_DeviceFinder.ResetHeadsetTypeCache()` has been deprecated. This method will be removed in a future version of VRTK.")]
         public static void ResetHeadsetTypeCache()
         {
             cachedHeadsetType = "";
@@ -401,6 +423,7 @@ namespace VRTK
         /// </summary>
         /// <param name="summary">If this is `true`, then the generic name for the headset is returned not including the version type (e.g. OculusRift will be returned for DK2 and CV1).</param>
         /// <returns>The Headset type that is connected.</returns>
+        [System.Obsolete("`VRTK_DeviceFinder.GetHeadsetType(summary) -> VRTK_DeviceFinder.Headsets` has been replaced with `VRTK_DeviceFinder.GetHeadsetType() -> SDK_BaseHeadset.HeadsetType`. This method will be removed in a future version of VRTK.")]
         public static Headsets GetHeadsetType(bool summary = false)
         {
             Headsets returnValue = Headsets.Unknown;
@@ -443,6 +466,47 @@ namespace VRTK
             }
 
             return returnValue;
+        }
+
+        /// <summary>
+        /// The GetHeadsetTypeAsString method returns a string representing the type of headset connected.
+        /// </summary>
+        /// <returns>The string of the headset connected.</returns>
+        public static string GetHeadsetTypeAsString()
+        {
+            return VRTK_SDK_Bridge.GetHeadsetType();
+        }
+
+        /// <summary>
+        /// The GetHeadsetType method returns the type of headset currently connected.
+        /// </summary>
+        /// <returns>The Headset type that is connected.</returns>
+        public static SDK_BaseHeadset.HeadsetType GetHeadsetType()
+        {
+            switch (GetHeadsetTypeAsString())
+            {
+                case "simulator":
+                    return SDK_BaseHeadset.HeadsetType.Simulator;
+                case "htcvive":
+                    return SDK_BaseHeadset.HeadsetType.HTCVive;
+                case "oculusrift":
+                    return SDK_BaseHeadset.HeadsetType.OculusRift;
+                case "oculusgearvr":
+                    return SDK_BaseHeadset.HeadsetType.OculusGearVR;
+                case "googledaydream":
+                    return SDK_BaseHeadset.HeadsetType.GoogleDaydream;
+                case "googlecardboard":
+                    return SDK_BaseHeadset.HeadsetType.GoogleCardboard;
+                case "hyperealvr":
+                    return SDK_BaseHeadset.HeadsetType.HyperealVR;
+                case "oculusriftdk1":
+                    return SDK_BaseHeadset.HeadsetType.OculusRiftDK1;
+                case "oculusriftdk2":
+                    return SDK_BaseHeadset.HeadsetType.OculusRiftDK2;
+                case "windowsmixedreality":
+                    return SDK_BaseHeadset.HeadsetType.WindowsMixedReality;
+            }
+            return SDK_BaseHeadset.HeadsetType.Undefined;
         }
 
         /// <summary>
