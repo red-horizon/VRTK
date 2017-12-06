@@ -73,6 +73,14 @@ namespace VRTK
         protected LineRenderer customLineRenderer;
         protected bool lineRendererAndItem;
 
+        public virtual LineRenderer lineRenderer
+        {
+            get
+            {
+                return customLineRenderer;
+            }
+        }
+
         public virtual void Create(int setFrequency, float radius, GameObject tracer, bool rescaleTracer = false)
         {
             float circleSize = radius / 8;

@@ -418,6 +418,9 @@ namespace VRTK
         {
             Vector3 point1 = bodyCollider.transform.parent.TransformPoint(bodyCollider.transform.localPosition + (bodyCollider.center)) + (Vector3.up * ((bodyCollider.height * 0.5f) - bodyCollider.radius));
             Vector3 point2 = bodyCollider.transform.parent.TransformPoint(bodyCollider.transform.localPosition + (bodyCollider.center)) - (Vector3.up * ((bodyCollider.height * 0.5f) - bodyCollider.radius));
+            point1 -= direction.normalized * bodyCollider.radius;
+            point2 -= direction.normalized * bodyCollider.radius;
+            maxDistance += bodyCollider.radius;
             RaycastHit collisionHit;
             return VRTK_CustomRaycast.CapsuleCast(customRaycast, point1, point2, bodyCollider.radius, direction, maxDistance, out collisionHit, defaultIgnoreLayer, QueryTriggerInteraction.Ignore);
         }
@@ -759,6 +762,10 @@ namespace VRTK
 
                 //Determine the current valid floor that the user is standing over
                 currentValidFloorObject = (VRTK_CustomRaycast.Raycast(customRaycast, standingDownRay, out standingDownRayCollision, defaultIgnoreLayer, Mathf.Infinity, QueryTriggerInteraction.Ignore) ? standingDownRayCollision.collider.gameObject : null);
+                //if (currentValidFloorObject != null)
+                //    Debug.LogFormat("Current Valid Floor: {0}", currentValidFloorObject.name);
+                //else
+                //    Debug.Log("Invalid Floor.");
 
                 //Don't bother checking for lean if body collisions are disabled
                 if (headset == null || playArea == null || !enableBodyCollisions)
