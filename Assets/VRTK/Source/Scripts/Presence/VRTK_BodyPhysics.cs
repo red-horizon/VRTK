@@ -393,7 +393,7 @@ namespace VRTK
         public virtual void ResetIgnoredCollisions()
         {
             //Go through all the existing set up ignored colliders and reset their collision state
-            foreach (GameObject ignoreCollisionsOnGameObject in ignoreCollisionsOnGameObjects)
+            foreach (GameObject ignoreCollisionsOnGameObject in new HashSet<GameObject>(ignoreCollisionsOnGameObjects))
             {
                 if (ignoreCollisionsOnGameObject != null)
                 {
@@ -427,7 +427,7 @@ namespace VRTK
 
         protected virtual void Awake()
         {
-            VRTK_SDKManager.instance.AddBehaviourToToggleOnLoadedSetupChange(this);
+            VRTK_SDKManager.AttemptAddBehaviourToToggleOnLoadedSetupChange(this);
         }
 
         protected override void OnEnable()
@@ -438,7 +438,10 @@ namespace VRTK
             footColliderContainerNameCheck = VRTK_SharedMethods.GenerateVRTKObjectName(true, FOOT_COLLIDER_CONTAINER_NAME);
             enableBodyCollisionsStartingValue = enableBodyCollisions;
             EnableDropToFloor();
-            EnableBodyPhysics();
+            if (playArea != null)
+            {
+                EnableBodyPhysics();
+            }
             SetupIgnoredCollisions();
         }
 
@@ -453,7 +456,7 @@ namespace VRTK
 
         protected virtual void OnDestroy()
         {
-            VRTK_SDKManager.instance.RemoveBehaviourToToggleOnLoadedSetupChange(this);
+            VRTK_SDKManager.AttemptRemoveBehaviourToToggleOnLoadedSetupChange(this);
         }
 
         protected virtual void FixedUpdate()
@@ -947,8 +950,14 @@ namespace VRTK
 
         protected virtual void ManagePhysicsCollider(Collider collider, bool state)
         {
-            Physics.IgnoreCollision(bodyCollider, collider, state);
-            Physics.IgnoreCollision(footCollider, collider, state);
+            if (bodyCollider != null)
+            {
+                Physics.IgnoreCollision(bodyCollider, collider, state);
+            }
+            if (footCollider != null)
+            {
+                Physics.IgnoreCollision(footCollider, collider, state);
+            }
         }
 
         protected virtual void CheckStepUpCollision(Collision collision)
@@ -961,9 +970,10 @@ namespace VRTK
                 Vector3 colliderWorldCenter = playArea.TransformPoint(footCollider.center);
                 Vector3 castStart = new Vector3(colliderWorldCenter.x, colliderWorldCenter.y + (CalculateStepUpYOffset() * stepYIncrement), colliderWorldCenter.z);
                 Vector3 castExtents = new Vector3(bodyCollider.radius, boxCastHeight, bodyCollider.radius);
-                RaycastHit floorCheckHit;
                 float castDistance = castStart.y - playArea.position.y;
-                if (Physics.BoxCast(castStart, castExtents, Vector3.down, out floorCheckHit, Quaternion.identity, castDistance) && (floorCheckHit.point.y - playArea.position.y) > stepDropThreshold)
+                RaycastHit floorCheckHit;
+                bool floorHit = VRTK_CustomRaycast.BoxCast(customRaycast, castStart, castExtents, Vector3.down, Quaternion.identity, castDistance, out floorCheckHit, defaultIgnoreLayer, QueryTriggerInteraction.Ignore);
+                if (floorHit && (floorCheckHit.point.y - playArea.position.y) > stepDropThreshold)
                 {
                     //If there is a teleporter attached then use that to move
                     if (teleporter != null && enableTeleport)
@@ -1123,11 +1133,13 @@ namespace VRTK
             if (generateRigidbody && bodyRigidbody != null)
             {
                 Destroy(bodyRigidbody);
+                bodyRigidbody = null;
             }
 
             if (bodyColliderContainer != null)
             {
                 Destroy(bodyColliderContainer);
+                bodyColliderContainer = null;
             }
         }
 
@@ -1344,7 +1356,6 @@ namespace VRTK
                     storedCurrentPhysics = storedRetogglePhysics;
                     retogglePhysicsOnCanFall = false;
                 }
-
                 if (enableBodyCollisions && (teleporter == null || !enableTeleport || hitFloorYDelta > gravityFallYThreshold))
                 {
                     GravityFall(rayCollidedWith);
