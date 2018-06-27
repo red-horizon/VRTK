@@ -298,12 +298,12 @@ namespace VRTK.Controllables.ArtificialBased
                 Vector3 storedScale = transform.localScale;
                 rotatorContainer = new GameObject(VRTK_SharedMethods.GenerateVRTKObjectName(true, name, "Controllable", "ArtificialBased", "RotatorContainer"));
                 rotatorContainer.transform.SetParent(transform.parent);
-                rotatorContainer.transform.localPosition = transform.localPosition;
-                rotatorContainer.transform.localRotation = transform.localRotation;
+                rotatorContainer.transform.localPosition = hingePoint.localPosition;
+                rotatorContainer.transform.localRotation = hingePoint.localRotation;
                 rotatorContainer.transform.localScale = Vector3.one;
                 transform.SetParent(rotatorContainer.transform);
-                rotatorContainer.transform.localPosition = hingePoint.localPosition;
-                transform.localPosition = -hingePoint.localPosition;
+                //rotatorContainer.transform.localPosition = hingePoint.localPosition;
+                //transform.localPosition = -hingePoint.localPosition;
                 transform.localScale = storedScale;
                 hingePoint.transform.SetParent(transform);
             }
